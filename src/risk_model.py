@@ -1,111 +1,142 @@
-from typing import Dict
+"""
+risk_model.py
+Core risk model combining soil saturation, storm severity, and site sensitivity and mapping to user-facing categories.
+
+Assumptions
+-----------
+- All data has already passed through quality control and basic smoothing.
+- Soil moisture values have already been converted to a normalized saturation
+  index S for the relevant depth (~50 cm) based on the selected soil preset
+  (field capacity, wilting point, saturation).
+- We are only modeling seepage / hydrostatic pressure type basement risk,
+  not sewer backup or surface overland flooding.
+- storm_severity_ratio and soil_response_sensitivity_index are already
+  pre-computed elsewhere in the pipeline from historical data.
+"""
+from soil_saturation import compute_soil_saturation_component
+from storm_severity import compute_storm_severity_component
+from site_sensitivity import compute_site_sensitivity_component
+
+from typing import Tuple
 
 
-def compute_risk_score(features: Dict[str, float]) -> float:
+def compute_risk_score(
+    soil_saturation_current: float,
+    soil_saturation_1h_ago: float,
+    forecast_24h_mm: float,
+    IDF_24h_2yr_mm: float,
+) -> Tuple[float, float]:
     """
-    Compute a 0–100 flood risk score from engineered features.
+    Compute the internal and displayed risk scores from the three components.
 
-    Inputs (from features dict)
-    ---------------------------
-    sat_avg : float
-        Average deep saturation around the house (unitless S).
-    max_sat : float
-        Maximum deep saturation at any wall.
-    sat_asymmetry : float
-        Deep saturation asymmetry: max_deep - min_deep.
-    rain_6h_prev : float
-        Total observed rainfall over the last 6 hours [mm].
-        NOTE: currently NOT used in the risk score. Kept for analysis/calibration.
-    rain_12h_forecast : float
-        Total forecast rainfall over the next 12 hours [mm].
-        Used to modulate how urgent the current saturation state is.
-
-    Approach
+    Structure
     --------
-    1. Baseline seepage risk:
-       - Driven mainly by S_deep_avg and max_deep.
-       - Represents how loaded the soil is around the foundation.
+    1. Compute a base soil risk score [0, 100] from saturation alone.
+    2. Compute storm_severity_factor [0, 1.5] from forecast / IDF ratio.
+    3. Compute site_sensitivity_factor [0, 1] from the last hour of soil behavior.
+    4. Combine them multiplicatively:
 
-    2. Forecast factor:
-       - Uses forecast_12h only.
-       - Scales the baseline risk up or down depending on how much rain is expected.
+           RiskInternal = BaseSoilRisk * (1 + site_sensitivity_factor
+                                              * storm_severity_factor)
 
-    3. Asymmetry risk:
-       - Small additional bump if one wall is much wetter than the others.
+       This means:
+         - If soil is very dry, RiskInternal stays low even for big storms.
+         - If soil is wet but storms are small, RiskInternal is mostly
+           determined by saturation.
+         - If soil is wet, the site is reactive, and a severe storm is coming,
+           RiskInternal can exceed 100 internally (extreme conditions).
 
-    The result is clamped to [0, 100].
+    5. RiskDisplayed is then clamped to [0, 100] for user-facing simplicity.
+
+    Returns
+    -------
+    risk_score_internal : float
+        Raw hazard index that may exceed 100 in extreme conditions.
+    risk_score_displayed : float
+        Risk score clamped to [0, 100] for mapping to user categories.
     """
 
-    sat_avg = float(features["sat_avg"])
-    max_sat = float(features["max_sat"])
-    sat_asymmetry = float(features["sat_asymmetry"])
-    # rain_6h_prev is currently unused but kept for future analysis
-    # rain_6h_prev = float(features["rain_6h_prev"])
-    rain_12h_forecast = float(features["rain_12h_forecast"])
+    base_soil_risk = compute_soil_saturation_component(soil_saturation_current)
+    storm_factor = compute_storm_severity_component(forecast_24h_mm, IDF_24h_2yr_mm)
+    site_sensitivity_factor = compute_site_sensitivity_component(
+        soil_saturation_current, soil_saturation_1h_ago
+    )
 
-    # -----------------------------
-    # 1. Baseline seepage component
-    # -----------------------------
-    # Map S_deep_avg into ~0–80 points.
-    # sat_avg ~ 0   -> near 0 baseline points
-    # sat_avg ~ 1   -> ~80 baseline points
-    baseline_raw = max(sat_avg, 0.0) * 80.0
-    if baseline_raw > 80.0:
-        baseline_raw = 80.0
+    amplification_factor = 1.0 + site_sensitivity_factor * storm_factor
+    risk_score_internal = base_soil_risk * amplification_factor
 
-    # If any wall is very wet at depth, add a small bump
-    if max_sat > 1.0:
-        baseline_raw += 5.0
+    # Clamp for the user-facing score.
+    risk_score_displayed = max(0.0, min(risk_score_internal, 100.0))
 
-    if baseline_raw > 85.0:
-        baseline_raw = 85.0
-
-    # -----------------------------
-    # 2. Forecast factor
-    # -----------------------------
-    # Idea: future rain determines how urgent the current soil state is.
-    # Assume "typical" forecast range ~0–40 mm in 12h for scaling.
-    forecast_norm = min(rain_12h_forecast / 40.0, 1.0)  # 0–1
-
-    # If no rain is expected, we still keep some fraction of the baseline
-    # (risk of seepage when soil is already very wet), but lower urgency.
-    # If heavy rain is expected, we apply the full baseline.
-    storm_factor = 0.5 + 0.5 * forecast_norm  # ranges from 0.5 to 1.0
-
-    combined = baseline_raw * storm_factor
-
-    # -----------------------------
-    # 3. Asymmetry component
-    # -----------------------------
-    asym_raw = 0.0
-    if max_sat > 0.5 and sat_asymmetry > 0.1:
-        # Limit sat_asymmetry to 0.5 for scaling; map to 0–10 points
-        A_scaled = min(sat_asymmetry, 0.5) / 0.5  # 0–1
-        asym_raw = A_scaled * 10.0
-
-    # -----------------------------
-    # 4. Combine and clamp
-    # -----------------------------
-    raw_score = combined + asym_raw
-
-    if raw_score < 0.0:
-        raw_score = 0.0
-    elif raw_score > 100.0:
-        raw_score = 100.0
-
-    return raw_score
+    return risk_score_internal, risk_score_displayed
 
 
-def map_risk_category(risk_score: float) -> str:
+def map_risk_category(risk_score_displayed: float) -> str:
     """
-    Map a numeric risk score (0–100) to a simple category string.
+    Map the displayed risk score (0–100) into a user-facing category.
+
+    Categories and meanings
+    -----------------------
+    Low (0–30)
+        Soil/risk:
+            - Soil near the foundation is relatively dry or only mildly wet.
+            - Upcoming rainfall is small or typical for the area.
+        User:
+            - Basement seepage due to soil pressure is unlikely.
+            - No action needed beyond normal seasonal maintenance.
+
+    Moderate (30–60)
+        Soil/risk:
+            - Soil moisture is elevated compared to normal background levels,
+              OR a moderate storm is coming.
+            - Conditions are trending wetter, but not yet critical.
+        User:
+            - Start paying attention.
+            - Check gutters, downspouts, and sump pump function if present.
+
+    High (60–80)
+        Soil/risk:
+            - Soil around the foundation is quite wet and the model indicates
+              a meaningful increase in hydrostatic pressure is likely,
+              especially with the incoming storm.
+        User:
+            - Take preventative steps:
+                - Move valuables off the basement floor.
+                - Confirm sump pump operation.
+                - Monitor known problem spots (cracks, window wells).
+
+    Severe (80–100)
+        Soil/risk:
+            - Soil is near or above saturation and the upcoming rainfall
+              is unusually large for this location (e.g., near or above a
+              2-year event).
+            - There is a significant chance of seepage at weak points if
+              conditions persist.
+        User:
+            - Treat as a “prepare now” situation:
+                - Protect items in at-risk areas.
+                - Monitor basement during/after the storm.
+                - Consider additional temporary measures if you’ve had
+                  issues here before.
+
+    Parameters
+    ----------
+    risk_score_displayed : float
+        Risk score after clamping to [0, 100].
+
+    Returns
+    -------
+    category : str
+        One of "Low", "Moderate", "High", "Severe".
     """
 
-    if risk_score < 30.0:
+    score = risk_score_displayed
+
+    if score < 30.0:
         return "Low"
-    elif risk_score < 60.0:
+    elif score < 60.0:
         return "Moderate"
-    elif risk_score < 80.0:
+    elif score < 80.0:
         return "High"
     else:
         return "Severe"

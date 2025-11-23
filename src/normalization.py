@@ -1,7 +1,6 @@
 from typing import Dict
 from src.config import THETA_FC, THETA_SAT
 
-
 def normalize_moisture(cleaned_readings: Dict[str, float]) -> Dict[str, float]:
     """
     Convert raw soil moisture values into a normalized saturation measure.
@@ -45,7 +44,8 @@ def normalize_moisture(cleaned_readings: Dict[str, float]) -> Dict[str, float]:
     saturation: Dict[str, float] = {}
 
     for key, theta in cleaned_readings.items():
-        S = (theta - THETA_FC) / THETA_SAT - THETA_FC
+        #TODO: add lookup for soil-specific THETA_FC and THETA_SAT
+        S = (theta - THETA_FC) / (THETA_SAT - THETA_FC)
         saturation[key] = S
 
     return saturation

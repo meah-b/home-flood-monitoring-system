@@ -1,55 +1,103 @@
-from typing import Dict
+from typing import Dict, List, Optional
+import math
 
 
-def QC_and_smooth(raw_readings: Dict[str, float]) -> Dict[str, float]:
+def _reading_passes_basic_qc(reading: Dict[str, float]) -> bool:
     """
-    Placeholder QC and smoothing function.
-    
-    For early development, we simply return the raw readings without modification.
-    The dataset is assumed to be clean, within expected ranges, and without sensor errors.
+    Basic QC for a single raw reading.
 
-    Future QC TODOs:
-    ----------------
-    1. Range validation
-       - Soil moisture readings are expected to be between 0 and 1 (fractional volumetric water content).
-       - Flag values outside this range as sensor errors.
+    Conditions (v1):
+    - All sensor values must be real numbers (no None, no NaN).
+    - All values must lie within [0, 1] as fractional volumetric water content.
 
-    2. Missing / NaN handling
-       - Detect NaN, None, empty strings, or failed conversions.
-       - Decide whether to use previous timestep values or fall back to defaults.
+    If any sensor fails these checks, the entire reading is rejected.
+    """
 
-    3. Outlier detection
-       - Detect abrupt spikes or drops (e.g., sensor glitches).
-       - Possibly apply a small threshold-based smoothing or replacement.
+    for key, value in reading.items():
+        # Reject missing values
+        if value is None:
+            return False
 
-    4. Temporal smoothing (optional)
-       - Very light smoothing (moving average) to reduce noise.
-       - Only if it does not reduce responsiveness to rainfall-driven changes.
+        # Reject non-float-ish or NaN
+        try:
+            v = float(value)
+        except (TypeError, ValueError):
+            return False
 
-    5. Per-sensor health monitoring (future feature)
-       - Track frequent failures or drift for each sensor.
-       - Could output warnings or mark a sensor as unreliable.
+        if math.isnan(v):
+            return False
 
-    For now:
+        # Simple physical range check for theta
+        if not (0.0 <= v <= 1.0):
+            return False
+
+    return True
+
+
+def QC_and_smooth(
+    batch_readings: List[Dict[str, float]],
+    previous_valid_reading: Optional[Dict[str, float]] = None,
+) -> Dict[str, float]:
+    """
+    Quality control for a batch of readings at a single 15-minute interval.
+
+    Inputs
+    ------
+    batch_readings : list of dict
+        A list of raw readings taken within the same 15-minute window.
+        Each element is a dict like:
+            {
+                "north_sensor": float,
+                "south_sensor": float,
+                "east_sensor": float,
+                "west_sensor": float,
+            }
+        The first reading in the list is the earliest; we prefer to keep
+        ordering simple: try the first, then the second, etc.
+
+    previous_valid_reading : dict or None
+        The last known good reading from an earlier timestep.
+        Used as a fallback if all readings in this batch fail QC.
+
+        In a real system, this would eventually come from your database /
+        Firebase (e.g., "most recent valid record before this timestamp").
+
+    Behavior
     --------
-    - We trust the dataset.
-    - We perform no validation, filtering, or smoothing.
-    - We return the raw readings unchanged so the pipeline can run end-to-end.
+    1. Iterate over each reading in the batch in order:
+         - Run basic QC (range checks, NaNs).
+         - As soon as one passes, return it as the cleaned reading.
 
-    Parameters
-    ----------
-    raw_readings : dict
-        Keys:
-        "N_shallow", "N_deep",
-        "S_shallow", "S_deep",
-        "E_shallow", "E_deep",
-        "W_shallow", "W_deep".
+    2. If all readings fail QC:
+         - If previous_valid_reading is provided, return that.
+         - Otherwise, you can either:
+             - raise an error, or
+             - return an empty dict / special marker.
 
-    Returns
-    -------
-    dict
-        The raw readings, unchanged.
+       For now, we fall back to previous_valid_reading if possible,
+       and raise a ValueError if there is truly nothing to use.
+
+    TODO (future):
+    --------------
+    - Instead of relying on `previous_valid_reading` being passed in,
+      fetch the last known-good reading from Firebase / cloud storage
+      when all readings in this batch fail QC.
     """
 
-    # Return raw values directly (no QC applied yet)
-    return raw_readings
+    # 1. Try each reading in order and return the first that passes QC.
+    for reading in batch_readings:
+        if _reading_passes_basic_qc(reading):
+            return reading
+
+    # 2. If we get here, all readings failed QC.
+    #    Fall back to the last known valid reading if available.
+    if previous_valid_reading is not None:
+        # NOTE: in production, this would likely be fetched from Firebase
+        # based on timestamp and house ID.
+        return previous_valid_reading
+
+    # 3. No valid reading and no fallback available: this is a hard failure.
+    #    You can change this to return {} if you prefer a softer behavior.
+    raise ValueError(
+        "QC_and_smooth: all readings failed QC and no previous_valid_reading was provided."
+    )

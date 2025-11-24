@@ -37,9 +37,7 @@ def compute_site_sensitivity_component(
     delta_S_1h = max(0.0, soil_saturation_current - soil_saturation_1h_ago)
 
     # DELTA_S_REF = 0.1 means: a 10% jump toward saturation in 1 hour
-    # is considered "high reactivity" for typical clay/till soils.
-    DELTA_S_REF = 0.1  #TODO adjust this as needed based on soil types
-
+    DELTA_S_REF = 0.1
     sensitivity_index = delta_S_1h / DELTA_S_REF
 
     # Clamp to [0, 1]

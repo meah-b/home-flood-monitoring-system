@@ -13,7 +13,7 @@ def _reading_passes_basic_qc(reading: Dict[str, float]) -> bool:
     If any sensor fails these checks, the entire reading is rejected.
     """
 
-    for key, value in reading.items():
+    for _, value in reading.items():
         # Reject missing values
         if value is None:
             return False
@@ -57,8 +57,6 @@ def QC_and_smooth(
     previous_valid_reading : dict or None
         The last known good reading from an earlier timestep.
         Used as a fallback if all readings in this batch fail QC.
-
-        TODO: this should come from Firebase (e.g., "most recent valid record before this timestamp").
 
     Behavior
     --------

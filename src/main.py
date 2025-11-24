@@ -4,31 +4,10 @@ from src.features import compute_features
 from src.risk_model import compute_risk_score, map_risk_category
 
 import pandas as pd
-from typing import Literal
-
-
-def load_timeseries():
-    """Load soil moisture, observed rainfall, and forecast rainfall, and merge them on timestamp.
-    """
-
-    soil = pd.read_csv(f"data/moderate_risk/soil_moisture_timeseries.csv", parse_dates=["timestamp"])
-    rain_obs = pd.read_csv(f"data/moderate_risk/rain_observed.csv", parse_dates=["timestamp"])
-    rain_fc = pd.read_csv(f"data/moderate_risk/rain_forecast.csv", parse_dates=["timestamp"])
-
-    # Merge on timestamp so we have everything in one table
-    data = (
-        soil
-        .merge(rain_obs, on="timestamp", how="left")
-        .merge(rain_fc, on="timestamp", how="left")
-        .sort_values("timestamp")
-    )
-
-    return data
-
 
 def run_pipeline():
     #TODO: fetch batch of data from Firebase: batch_readings, previous_valid_reading, soil_saturation_1h_ago
-    data = load_timeseries()
+    data = pd.read_csv(f"data/moderate_risk/soil_moisture_timeseries.csv", parse_dates=["timestamp"]) # Placeholder for Firebase fetch
     results = []
 
     for _, row in data.iterrows():

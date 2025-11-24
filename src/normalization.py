@@ -1,5 +1,7 @@
+from turtle import pd
 from typing import Dict
-from src.config import THETA_FC, THETA_SAT
+
+import pandas as pd
 
 def normalize_moisture(cleaned_readings: Dict[str, float]) -> Dict[str, float]:
     """
@@ -7,15 +9,15 @@ def normalize_moisture(cleaned_readings: Dict[str, float]) -> Dict[str, float]:
 
     Assumptions:
     -----------
-    - cleaned_readings values are fractional volumetric water content (theta),
+    - cleaned_readings values are fractional volumetric water content (vwc),
       typically between 0 and 1.
-    - THETA_FC (field capacity) and THETA_SAT (saturation) are defined in config.py.
+    - fc_vwc (field capacity) and sat_vwc (saturation) are defined in config.py.
 
     Definition:
     -----------
-    For each sensor value theta, we compute a normalized saturation:
+    For each sensor value vwc, we compute a normalized saturation:
 
-        S = (theta - THETA_FC) / (THETA_SAT - THETA_FC)
+        S = (vwc - fc_vwc) / (sat_vwc - fc_vwc)
 
     Interpretation:
     ---------------
@@ -40,12 +42,24 @@ def normalize_moisture(cleaned_readings: Dict[str, float]) -> Dict[str, float]:
     dict
         Normalized saturation values with the same keys. Values are unitless.
     """
+    #TODO: fetch soil type from Firebase
+    soil_type = 'clay_loam'  # placeholder value
+    soil_water_properties = pd.read_csv(f"data/soil_water_properties.csv")
+    row = soil_water_properties.loc[soil_water_properties['soil_type'] == soil_type]
+
+    if row.empty:
+        raise ValueError(f"Soil type '{soil_type}' not found")
+
+    fc_vwc = float(row["fc_vwc"].values[0])
+    sat_vwc = float(row["sat_vwc"].values[0])
+
+    # IDF parameters TODO: replace with local data
+    IDF_24H_2YR_MM = 25.0  # 24-hour, 2-year storm depth in mm
 
     saturation: Dict[str, float] = {}
 
-    for key, theta in cleaned_readings.items():
-        #TODO: add lookup for soil-specific THETA_FC and THETA_SAT
-        S = (theta - THETA_FC) / (THETA_SAT - THETA_FC)
+    for key, vwc in cleaned_readings.items():
+        S = (vwc - fc_vwc) / (sat_vwc - fc_vwc)
         saturation[key] = S
 
     return saturation

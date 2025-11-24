@@ -1,0 +1,12 @@
+soil_type,fc_vwc,sat_vwc
+sand,0.10,0.396
+loamy_sand,0.16,0.396
+sandy_loam,0.21,0.415
+loam,0.27,0.453
+silt_loam,0.30,0.472
+sandy_clay_loam,0.36,0.472
+clay_loam,0.29,0.472
+silty_clay_loam,0.28,0.491
+sandy_clay,0.32,0.509
+silty_clay,0.40,0.509
+clay,0.40,0.528

@@ -1,21 +1,6 @@
-"""
-risk_model.py
-Core risk model combining soil saturation, storm severity, and site sensitivity and mapping to user-facing categories.
-
-Assumptions
------------
-- All data has already passed through quality control and basic smoothing.
-- Soil moisture values have already been converted to a normalized saturation
-  index S for the relevant depth (~50 cm) based on the selected soil preset
-  (field capacity, wilting point, saturation).
-- We are only modeling seepage / hydrostatic pressure type basement risk,
-  not sewer backup or surface overland flooding.
-- storm_severity_ratio and soil_response_sensitivity_index are already
-  pre-computed elsewhere in the pipeline from historical data.
-"""
-from soil_saturation import compute_soil_saturation_component
-from storm_severity import compute_storm_severity_component
-from site_sensitivity import compute_site_sensitivity_component
+from risk_components.soil_saturation import compute_soil_saturation_component
+from risk_components.storm_severity import compute_storm_severity_component
+from risk_components.site_sensitivity import compute_site_sensitivity_component
 
 from typing import Tuple
 

@@ -27,7 +27,6 @@ def _reading_passes_basic_qc(reading: Dict[str, float]) -> bool:
         if math.isnan(v):
             return False
 
-        # Simple physical range check for theta
         if not (0.0 <= v <= 1.0):
             return False
 
@@ -59,8 +58,7 @@ def QC_and_smooth(
         The last known good reading from an earlier timestep.
         Used as a fallback if all readings in this batch fail QC.
 
-        In a real system, this would eventually come from your database /
-        Firebase (e.g., "most recent valid record before this timestamp").
+        TODO: this should come from Firebase (e.g., "most recent valid record before this timestamp").
 
     Behavior
     --------
@@ -76,12 +74,6 @@ def QC_and_smooth(
 
        For now, we fall back to previous_valid_reading if possible,
        and raise a ValueError if there is truly nothing to use.
-
-    TODO (future):
-    --------------
-    - Instead of relying on `previous_valid_reading` being passed in,
-      fetch the last known-good reading from Firebase / cloud storage
-      when all readings in this batch fail QC.
     """
 
     # 1. Try each reading in order and return the first that passes QC.
@@ -92,12 +84,11 @@ def QC_and_smooth(
     # 2. If we get here, all readings failed QC.
     #    Fall back to the last known valid reading if available.
     if previous_valid_reading is not None:
-        # NOTE: in production, this would likely be fetched from Firebase
-        # based on timestamp and house ID.
         return previous_valid_reading
 
     # 3. No valid reading and no fallback available: this is a hard failure.
     #    You can change this to return {} if you prefer a softer behavior.
+    #    TODO: better handling for missing data
     raise ValueError(
         "QC_and_smooth: all readings failed QC and no previous_valid_reading was provided."
     )

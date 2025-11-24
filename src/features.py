@@ -3,39 +3,11 @@ from typing import Dict, Any
 
 def compute_features(
     saturation_values: Dict[str, float],
-    forecast_24h_mm: float,
     soil_saturation_1h_ago: float,
 ) -> Dict[str, Any]:
     """
     Compute simple, interpretable features for the flood-risk model
     from normalized saturation values and rainfall information.
-
-    Inputs
-    ------
-    saturation_values : dict
-        Normalized saturation values (S) for each sensor at the current timestep.
-        Expected keys:
-            "north_sensor",
-            "south_sensor",
-            "east_sensor",
-            "west_sensor"
-        These values come from normalize_moisture() and represent:
-            S = (theta - THETA_FC) / (THETA_SAT - THETA_FC)
-
-    forecast_24h_mm : float
-        Total forecast rainfall over the next 24 hours [mm].
-
-    Outputs
-    -------
-    features : dict
-        A dictionary of higher-level features used by the risk model, including:
-            - "sat_avg"    : average deep saturation around the house
-            - "max_sat"      : maximum deep saturation at any wall
-            - "sat_asymmetry"        : deep saturation asymmetry (max_deep - min_deep)
-            - "rain_24h_forecast"  : 24-hour forecast rainfall
-
-        These are intentionally simple for v1 and can be extended later
-        with trends and longer-term averages.
     """
 
     # 1. Extract saturation values by wall (assume keys exist)
@@ -72,7 +44,10 @@ def compute_features(
     # 4. TODO: add logic to fetch the IDF value for the location
     IDF_24h_2yr_mm = 50.0  # Placeholder value; replace with actual lookup
 
-    # 5. Bundle everything into a feature dict
+    # 5. TODO: add logic to fetch the 24h forecasted precipitation value for the location
+    forecast_24h_mm = 20.0  # Placeholder value; replace with actual lookup
+
+    # 6. Bundle everything into a feature dict
     features: Dict[str, Any] = {
         "sat_avg": sat_avg,
         "asymmetry": asymmetry_dict,

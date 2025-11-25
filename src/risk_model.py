@@ -1,6 +1,6 @@
-from risk_components.soil_saturation import compute_soil_saturation_component
-from risk_components.storm_severity import compute_storm_severity_component
-from risk_components.site_sensitivity import compute_site_sensitivity_component
+from src.risk_components.soil_saturation import compute_soil_saturation_component
+from src.risk_components.storm_severity import compute_storm_severity_component
+from src.risk_components.site_sensitivity import compute_site_sensitivity_component
 
 from typing import Tuple
 
@@ -50,7 +50,6 @@ def compute_risk_score(
     amplification_factor = 1.0 + site_sensitivity_factor * storm_factor
     risk_score_internal = base_soil_risk * amplification_factor
 
-    # Clamp for the user-facing score.
     risk_score_displayed = max(0.0, min(risk_score_internal, 100.0))
 
     return risk_score_internal, risk_score_displayed

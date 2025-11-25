@@ -3,7 +3,7 @@ from typing import Dict
 
 import pandas as pd
 
-def normalize_moisture(cleaned_readings: Dict[str, float]) -> Dict[str, float]:
+def normalize_moisture(cleaned_readings: Dict[str, float], soil_type: str) -> Dict[str, float]:
     """
     Convert raw soil moisture values into a normalized saturation measure.
 
@@ -42,8 +42,6 @@ def normalize_moisture(cleaned_readings: Dict[str, float]) -> Dict[str, float]:
     dict
         Normalized saturation values with the same keys. Values are unitless.
     """
-    #TODO: fetch soil type from Firebase
-    soil_type = 'clay_loam'  # placeholder value
     soil_water_properties = pd.read_csv(f"data/soil_water_properties.csv")
     row = soil_water_properties.loc[soil_water_properties['soil_type'] == soil_type]
 
@@ -52,9 +50,6 @@ def normalize_moisture(cleaned_readings: Dict[str, float]) -> Dict[str, float]:
 
     fc_vwc = float(row["fc_vwc"].values[0])
     sat_vwc = float(row["sat_vwc"].values[0])
-
-    # IDF parameters TODO: replace with local data
-    IDF_24H_2YR_MM = 25.0  # 24-hour, 2-year storm depth in mm
 
     saturation: Dict[str, float] = {}
 

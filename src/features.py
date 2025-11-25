@@ -1,9 +1,13 @@
 from typing import Dict, Any
+from src.utilities.idf_curve_extraction import get_idf_depth
+from src.utilities.forecast_extraction import get_24h_precip
 
 
 def compute_features(
     saturation_values: Dict[str, float],
     soil_saturation_1h_ago: float,
+    lat: float,
+    lon: float
 ) -> Dict[str, Any]:
     """
     Compute simple, interpretable features for the flood-risk model
@@ -41,11 +45,11 @@ def compute_features(
         "wettest_side": wettest_side,
     }
 
-    # 4. TODO: add logic to fetch the IDF value for the location
-    IDF_24h_2yr_mm = 50.0  # Placeholder value; replace with actual lookup
+    # 4. Fetch the IDF value for the location
+    IDF_24h_2yr_mm = get_idf_depth(lat, lon)
 
-    # 5. TODO: add logic to fetch the 24h forecasted precipitation value for the location
-    forecast_24h_mm = 20.0  # Placeholder value; replace with actual lookup
+    # 5. Fetch the 24h forecasted precipitation value for the location
+    forecast_24h_mm = get_24h_precip(lat, lon)
 
     # 6. Bundle everything into a feature dict
     features: Dict[str, Any] = {

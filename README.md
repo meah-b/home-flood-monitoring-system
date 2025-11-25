@@ -1,6 +1,6 @@
 # Home Flood-Risk Monitoring System
 A capstone project that combines **soil-moisture sensing**, **local climate data**, **soil-texture parameters**, and **storm-severity modelling** to estimate basement and foundation flood risk for individual homes. 
-The system reads four soil-moisture sensors **(north, south, east, and west walls)** of a house—and merges the data with **24-hour rainfall forecasts**, **MTO IDF curves**, and **short-term soil reactivity** to compute a homeowner-facing flood-risk score.
+The system reads four soil-moisture sensors **(north, south, east, and west walls)** of a house and merges the data with **24-hour rainfall forecasts**, **MTO IDF curves**, and **short-term soil reactivity** to compute a homeowner-facing flood-risk score.
 The end product will connect to a **mobile app**, giving homeowners early warning when soil conditions and upcoming rainfall create a higher chance of seepage or basement water ingress.
 
 ---
@@ -39,13 +39,13 @@ Implemented in `idf_curve_extraction.py`.
 ### **5. Flood-Risk Scoring Model**
 Three components combine into the final risk score:
 
-1. **Soil saturation** (0–100) — how wet the foundation soil is  
+1. **Soil saturation** (0–100): how wet the foundation soil is  
    (`soil_saturation_component.py`)
 
-2. **Storm severity factor** — ratio of forecast rainfall to local IDF  
+2. **Storm severity factor**: ratio of forecast rainfall to local IDF  
    (`storm_severity.py`)
 
-3. **Site sensitivity** — short-term soil reactivity (ΔS over 1 hour)  
+3. **Site sensitivity**: short-term soil reactivity (ΔS over 1 hour)  
    (`site_sensitivity.py`)
 
 Combined in `risk_model.py`.

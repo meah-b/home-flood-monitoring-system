@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional
 import math
+from statistics import median
 
 
 def _reading_passes_basic_qc(reading: Dict[str, float]) -> bool:
@@ -9,6 +10,7 @@ def _reading_passes_basic_qc(reading: Dict[str, float]) -> bool:
     Conditions (v1):
     - All sensor values must be real numbers (no None, no NaN).
     - All values must lie within [0, 1] as fractional volumetric water content.
+    - TODO: check timestamp
 
     If any sensor fails these checks, the entire reading is rejected.
     """
@@ -40,53 +42,39 @@ def QC_and_smooth(
     """
     Quality control for a batch of readings at a single 15-minute interval.
 
-    Inputs
-    ------
-    batch_readings : list of dict
-        A list of raw readings taken within the same 15-minute window.
-        Each element is a dict like:
-            {
-                "north_sensor": float,
-                "south_sensor": float,
-                "east_sensor": float,
-                "west_sensor": float,
-            }
-        The first reading in the list is the earliest; we prefer to keep
-        ordering simple: try the first, then the second, etc.
+    Now actually uses the whole batch:
 
-    previous_valid_reading : dict or None
-        The last known good reading from an earlier timestep.
-        Used as a fallback if all readings in this batch fail QC.
-
-    Behavior
-    --------
-    1. Iterate over each reading in the batch in order:
-         - Run basic QC (range checks, NaNs).
-         - As soon as one passes, return it as the cleaned reading.
-
-    2. If all readings fail QC:
+    1. Filter to readings that pass basic QC (no NaN, 0–1 range).
+    2. If any survive, compute a smoothed reading by taking the
+       *per-sensor median* across valid readings.
+    3. If all readings fail QC:
          - If previous_valid_reading is provided, return that.
-         - Otherwise, you can either:
-             - raise an error, or
-             - return an empty dict / special marker.
-
-       For now, we fall back to previous_valid_reading if possible,
-       and raise a ValueError if there is truly nothing to use.
+         - Otherwise raise ValueError.
     """
 
-    # 1. Try each reading in order and return the first that passes QC.
-    for reading in batch_readings:
-        if _reading_passes_basic_qc(reading):
-            return reading
+    if not batch_readings:
+        if previous_valid_reading is not None:
+            return previous_valid_reading
+        raise ValueError("QC_and_smooth: no readings provided and no previous_valid_reading.")
 
-    # 2. If we get here, all readings failed QC.
-    #    Fall back to the last known valid reading if available.
+    # 1. Keep only readings that pass QC
+    valid_readings = [r for r in batch_readings if _reading_passes_basic_qc(r)]
+
+    # 2. If we have at least one valid reading, smooth via per-sensor median
+    if valid_readings:
+        smoothed: Dict[str, float] = {}
+        sensor_keys = valid_readings[0].keys()
+
+        for key in sensor_keys:
+            values = [float(r[key]) for r in valid_readings]
+            smoothed[key] = float(median(values))
+
+        return smoothed
+
+    # 3. If all readings failed QC, fall back if possible
     if previous_valid_reading is not None:
         return previous_valid_reading
 
-    # 3. No valid reading and no fallback available: this is a hard failure.
-    #    You can change this to return {} if you prefer a softer behavior.
-    #    TODO: better handling for missing data
     raise ValueError(
         "QC_and_smooth: all readings failed QC and no previous_valid_reading was provided."
     )

@@ -1,0 +1,2 @@
+raw_north,raw_south,raw_east,raw_west,sat_north,sat_south,sat_east,sat_west,sat_avg,asymmetry,forecast_24h_mm,IDF_24h_2yr_mm,risk_score,category
+0.3,0.28,0.31,0.29,0.05494505494505499,-0.05494505494505469,0.10989010989010999,0.0,0.027472527472527573,"{'value': 0.16483516483516467, 'max_sat': 0.10989010989010999, 'wettest_side': 'east'}",0.0,49.44,0.0,Low

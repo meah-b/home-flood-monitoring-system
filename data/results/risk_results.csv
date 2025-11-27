@@ -1,2 +1,2 @@
-raw_north,raw_south,raw_east,raw_west,sat_north,sat_south,sat_east,sat_west,sat_avg,asymmetry,forecast_24h_mm,IDF_24h_2yr_mm,risk_score,category
-0.3,0.28,0.31,0.29,0.05494505494505499,-0.05494505494505469,0.10989010989010999,0.0,0.027472527472527573,"{'value': 0.16483516483516467, 'max_sat': 0.10989010989010999, 'wettest_side': 'east'}",0.0,49.44,0.0,Low
+raw_north,raw_south,raw_east,raw_west,sat_north,sat_south,sat_east,sat_west,sat_avg,asymmetry,forecast_24h_mm,IDF_24h_2yr_mm,base_soil_risk,storm_factor,site_sensitivity_factor,risk_score_internal,risk_score,category
+0.4,0.38,0.41,0.39,0.6043956043956047,0.49450549450549464,0.6593406593406593,0.5494505494505496,0.5769230769230771,"{'value': 0.1648351648351647, 'max_sat': 0.6593406593406593, 'wettest_side': 'east'}",2.1,60.91,32.98076923076924,0.0,0.7692307692307709,32.98076923076924,32.98076923076924,Moderate

@@ -31,8 +31,8 @@ def run_pipeline():
     
     #TODO: replace these with the fetch from Firebase
     soil_saturation_1h_ago = 0.5 
-    lat = 42.99744444
-    lon = -81.31008333
+    lat = 42.9973110477211
+    lon = -81.3101143606061
     soil_type="clay_loam"
 
     saturation = normalize_moisture(cleaned_readings, soil_type)
@@ -43,7 +43,7 @@ def run_pipeline():
         lon
     )
 
-    risk_score_internal, risk_score_displayed = compute_risk_score(features["sat_avg"],
+    risk_score_internal, risk_score_displayed, base_soil_risk, storm_factor, site_sensitivity_factor = compute_risk_score(features["sat_avg"],
                                     features["soil_saturation_1h_ago"],
                                     features["forecast_24h_mm"],
                                     features["IDF_24h_2yr_mm"])
@@ -66,6 +66,10 @@ def run_pipeline():
             "asymmetry": features["asymmetry"],
             "forecast_24h_mm": features["forecast_24h_mm"],
             "IDF_24h_2yr_mm": features["IDF_24h_2yr_mm"],
+            "base_soil_risk": base_soil_risk,
+            "storm_factor": storm_factor,
+            "site_sensitivity_factor": site_sensitivity_factor,
+            "risk_score_internal": risk_score_internal,
             "risk_score": risk_score_displayed,
             "category": category,
         }

@@ -10,7 +10,7 @@ def compute_risk_score(
     soil_saturation_1h_ago: float,
     forecast_24h_mm: float,
     IDF_24h_2yr_mm: float,
-) -> Tuple[float, float]:
+) -> Tuple[float, float, float, float, float]:
     """
     Compute the internal and displayed risk scores from the three components.
 
@@ -39,6 +39,12 @@ def compute_risk_score(
         Raw hazard index that may exceed 100 in extreme conditions.
     risk_score_displayed : float
         Risk score clamped to [0, 100] for mapping to user categories.
+    base_soil_risk: float
+        Base risk score from soil saturation component alone.
+    storm_factor: float
+        Storm severity factor from forecast / IDF ratio.
+    site_sensitivity_factor: float
+        Site sensitivity factor from recent soil behavior.
     """
 
     base_soil_risk = compute_soil_saturation_component(soil_saturation_current)
@@ -52,7 +58,7 @@ def compute_risk_score(
 
     risk_score_displayed = max(0.0, min(risk_score_internal, 100.0))
 
-    return risk_score_internal, risk_score_displayed
+    return risk_score_internal, risk_score_displayed, base_soil_risk, storm_factor, site_sensitivity_factor
 
 
 def map_risk_category(risk_score_displayed: float) -> str:

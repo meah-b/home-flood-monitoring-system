@@ -34,8 +34,7 @@ def normalize_moisture(cleaned_readings: Dict[str, float], soil_type: str) -> Di
     ----------
     cleaned_readings : dict
         Current timestep's cleaned soil moisture values (theta) with keys like:
-        "N_shallow", "N_deep", "S_shallow", "S_deep",
-        "E_shallow", "E_deep", "W_shallow", "W_deep".
+        "north_sensor", "east_sensor", "south_sensor", "west_sensor",
 
     Returns
     -------

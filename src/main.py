@@ -38,13 +38,12 @@ def run_pipeline():
     saturation = normalize_moisture(cleaned_readings, soil_type)
     features = compute_features(
         saturation,
-        soil_saturation_1h_ago,
         lat,
         lon
     )
 
     risk_score_internal, risk_score_displayed, base_soil_risk, storm_factor, site_sensitivity_factor = compute_risk_score(features["sat_avg"],
-                                    features["soil_saturation_1h_ago"],
+                                    soil_saturation_1h_ago,
                                     features["forecast_24h_mm"],
                                     features["IDF_24h_2yr_mm"])
     

@@ -48,4 +48,3 @@ def compute_soil_saturation_component(
     # Map S from [1.0, 1.5] -> additional [70, 100]
     fraction = (S_capped - 1.0) / (1.5 - 1.0)  # 0–1
     return 70.0 + fraction * 30.0
-    

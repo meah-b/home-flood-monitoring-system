@@ -5,7 +5,6 @@ from src.utilities.forecast_extraction import get_24h_precip
 
 def compute_features(
     saturation_values: Dict[str, float],
-    soil_saturation_1h_ago: float,
     lat: float,
     lon: float
 ) -> Dict[str, Any]:
@@ -57,7 +56,6 @@ def compute_features(
         "asymmetry": asymmetry_dict,
         "forecast_24h_mm": forecast_24h_mm,
         "IDF_24h_2yr_mm": IDF_24h_2yr_mm,
-        "soil_saturation_1h_ago": soil_saturation_1h_ago,
     }
 
     return features

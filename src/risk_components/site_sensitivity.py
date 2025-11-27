@@ -33,12 +33,10 @@ def compute_site_sensitivity_component(
     sensitivity_index : float in [0, 1]
     """
 
-    # Only consider wetting (positive increases)
     delta_S_1h = max(0.0, soil_saturation_current - soil_saturation_1h_ago)
 
     # DELTA_S_REF = 0.1 means: a 10% jump toward saturation in 1 hour
     DELTA_S_REF = 0.1
     sensitivity_index = delta_S_1h / DELTA_S_REF
 
-    # Clamp to [0, 1]
     return max(0.0, min(sensitivity_index, 1.0))

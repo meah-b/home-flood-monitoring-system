@@ -1,16 +1,16 @@
 # Home Flood-Risk Monitoring System
 A capstone project that combines **soil-moisture sensing**, **local climate data**, **soil-texture parameters**, and **storm-severity modelling** to estimate basement and foundation flood risk for individual homes. 
-The system reads four soil-moisture sensors **(north, south, east, and west walls)** of a house and merges the data with **24-hour rainfall forecasts**, **MTO IDF curves**, and **short-term soil reactivity** to compute a homeowner-facing flood-risk score.
+The system reads four soil-moisture sensors **(front, back, left, right)** of a house and merges the data with **24-hour rainfall forecasts**, **MTO IDF curves**, and **short-term soil reactivity** to compute a homeowner-facing flood-risk score.
 The end product will connect to a **mobile app**, giving homeowners early warning when soil conditions and upcoming rainfall create a higher chance of seepage or basement water ingress.
 
 ---
 
 ## 🌧️ Project Overview
 
-Traditional flood-risk models operate at watershed scale. Our goal is to create a **localized, homeowner-specific monitoring system** by integrating:
+Traditional flood-risk models operate at the watershed scale. Our goal is to create a **localized, homeowner-specific monitoring system** by integrating:
 
 ### **1. Soil Moisture Sensors (x4)**
-Placed around the house foundation (north, south, east, west).  
+Placed around the house foundation (front, back, left, right).  
 Values represent *fractional VWC* (volumetric water content).
 
 Quality control & smoothing:
